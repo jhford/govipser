@@ -5,10 +5,28 @@ import (
 	"github.com/jhford/govipser"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
-	"log"
 	"os"
 	"testing"
 )
+
+
+// testfile is the filename of the test image
+var testfile string = "test.png"
+// testinput is a valid PNG which can be overridden by TEST_IMAGE in
+// the environment
+var testinput []byte
+
+func init() {
+	if v, ok := os.LookupEnv("TEST_IMAGE"); ok {
+		testfile = v
+	}
+
+	i, err := ioutil.ReadFile(testfile)
+	if err != nil {
+		panic(err)
+	}
+	testinput = i
+}
 
 func TestCommand_String(t *testing.T) {
 	assert.Equal(t, "CMD,-1,-32,-64,1,32,64,0.1,0.1", vipser.Command{
@@ -83,22 +101,6 @@ func TestOperation_RunCorrectInput(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, []byte("Hello!"), output.Bytes())
-}
-
-var testfile string = "test.png"
-var testinput []byte
-
-func init() {
-	if v, ok := os.LookupEnv("TEST_IMAGE"); ok {
-		log.Printf("Setting test image path to %s", v)
-		testfile = v
-	}
-
-	i, err := ioutil.ReadFile(testfile)
-	if err != nil {
-		panic(err)
-	}
-	testinput = i
 }
 
 func TestOperation_ResizeImage_Readers(t *testing.T) {

@@ -1,10 +1,14 @@
+//go:generate bash -c "PACKAGE=vipser VAR=VipserLinux64 go run cmd/embed/embed.go < vipser > vipser64.go"
+
 package vipser
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 // Just to compile in if needed
@@ -21,6 +25,17 @@ func verifyFile(p string) error {
 	return nil
 }
 
+// MakeVipserBin creates a Vipser binary in the same directory if it knows
+// how to, otherwise returns an error
+func MakeVipserBin() (string, error) {
+	switch runtime.GOARCH {
+	case "amd64":
+		return "vipser-amd64", ioutil.WriteFile("vipser-amd64", vipser64, 0755)
+	default:
+		return "", fmt.Errorf("cannot create vipser binary for %s", runtime.GOARCH)
+	}
+}
+
 // VipserInit finds the vipser binary and stores it
 func FindVipser() (string, error) {
 	if Vipser != "" {
@@ -31,7 +46,7 @@ func FindVipser() (string, error) {
 		if prog, _ := exec.LookPath("vipser"); prog == "" {
 			vipser, err := filepath.Abs("vipser")
 			if err != nil {
-				return "", err
+				return MakeVipserBin()
 			}
 			return vipser, verifyFile(vipser)
 		} else {
