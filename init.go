@@ -15,7 +15,7 @@ func verifyFile(p string) error {
 		return fmt.Errorf("%s is not a valid executable", p)
 	} else if fi.IsDir() {
 		return fmt.Errorf("%s is a directory", p)
-	} else if fi.Mode() & os.FileMode(0111) == 0 {
+	} else if fi.Mode()&os.FileMode(0111) == 0 {
 		return fmt.Errorf("%s does not have exec permissions", p)
 	}
 	return nil
@@ -39,4 +39,3 @@ func FindVipser() (string, error) {
 		}
 	}
 }
-

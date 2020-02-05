@@ -51,9 +51,9 @@ func (c Command) String() string {
 
 type Operation struct {
 	Commands []Command
-	Input io.Reader
-	Output io.Writer
-	Vipser string
+	Input    io.Reader
+	Output   io.Writer
+	Vipser   string
 	finished bool
 }
 
@@ -64,21 +64,21 @@ func New() *Operation {
 	}
 	return &Operation{
 		Commands: make([]Command, 0),
-		Vipser: vipser,
+		Vipser:   vipser,
 	}
 }
 
-func (o *Operation) Resize(x,y int) *Operation {
+func (o *Operation) Resize(x, y int) *Operation {
 	o.Commands = append(o.Commands, Command{"RESIZE", x, y})
 	return o
 }
 
-func (o *Operation) Stretch(x,y int) *Operation {
+func (o *Operation) Stretch(x, y int) *Operation {
 	o.Commands = append(o.Commands, Command{"STRETCH", x, y})
 	return o
 }
 
-func (o *Operation) Expand(x,y int) *Operation {
+func (o *Operation) Expand(x, y int) *Operation {
 	o.Commands = append(o.Commands, Command{"EXPAND", x, y})
 	return o
 }
@@ -110,11 +110,11 @@ func (o *Operation) Embed(x, y, width, height int, embed VipserEmbed) *Operation
 }
 
 func (o *Operation) EmbedWhite(x, y, width, height int) *Operation {
-	return o.Embed(x,y,width,height, VipserEmbedWhite)
+	return o.Embed(x, y, width, height, VipserEmbedWhite)
 }
 
 func (o *Operation) EmbedBlack(x, y, width, height int) *Operation {
-	return o.Embed(x,y,width,height, VipserEmbedBlack)
+	return o.Embed(x, y, width, height, VipserEmbedBlack)
 }
 
 func (o *Operation) Blur(sigma float64) *Operation {
@@ -195,4 +195,3 @@ func (o *Operation) Apply(input []byte) ([]byte, error) {
 
 	return output.Bytes(), nil
 }
-

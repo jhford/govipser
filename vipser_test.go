@@ -27,8 +27,8 @@ func TestCommand_String(t *testing.T) {
 func TestOperation_RenderCommands(t *testing.T) {
 	t.Run("with commands", func(t *testing.T) {
 		o := vipser.New()
-		o.Resize(1,2)
-		o.Stretch(3,4)
+		o.Resize(1, 2)
+		o.Stretch(3, 4)
 		assert.Equal(t, []string{"RESIZE,1,2", "STRETCH,3,4"}, o.RenderCommands())
 	})
 
@@ -40,8 +40,8 @@ func TestOperation_RenderCommands(t *testing.T) {
 
 func TestOperation_AllCommands(t *testing.T) {
 	tests := map[string]func(*vipser.Operation){
-		"RESIZE,1,2": func(o *vipser.Operation) { o.Resize(1,2) },
-		"STRETCH,1,2": func(o *vipser.Operation) { o.Stretch(1,2) },
+		"RESIZE,1,2":  func(o *vipser.Operation) { o.Resize(1, 2) },
+		"STRETCH,1,2": func(o *vipser.Operation) { o.Stretch(1, 2) },
 	}
 
 	for expected, doer := range tests {
@@ -63,8 +63,8 @@ func TestOperation_RunCorrectArgs(t *testing.T) {
 	o.Input = &bytes.Buffer{}
 	o.Output = &output
 
-	o.Resize(1,2)
-	o.Stretch(3,4)
+	o.Resize(1, 2)
+	o.Stretch(3, 4)
 
 	err := o.Run()
 	assert.NoError(t, err)
@@ -140,7 +140,6 @@ func TestOperation_ResizeImage_Files(t *testing.T) {
 	op.Blur(3)
 	op.Rotate(90)
 
-
 	in, err := os.Open(testfile)
 	assert.NoError(t, err)
 	op.Input = in
@@ -177,28 +176,27 @@ func dobench(b *testing.B, mods func(*vipser.Operation)) {
 
 	b.ReportMetric(float64(len(out)), "bytes_out")
 	b.ReportMetric(float64(len(testinput)), "bytes_in")
-	b.ReportMetric(float64(len(testinput) - len(out)), "bytes_red")
+	b.ReportMetric(float64(len(testinput)-len(out)), "bytes_red")
 }
 
-func BenchmarkNoCommands(b *testing.B){
+func BenchmarkNoCommands(b *testing.B) {
 	dobench(b, func(operation *vipser.Operation) {})
 }
 
-func BenchmarkResize(b *testing.B){
+func BenchmarkResize(b *testing.B) {
 	dobench(b, func(operation *vipser.Operation) {
-		operation.Resize(200,200)
+		operation.Resize(200, 200)
 	})
 }
 
-func BenchmarkBlur2(b *testing.B){
+func BenchmarkBlur2(b *testing.B) {
 	dobench(b, func(operation *vipser.Operation) {
 		operation.Blur(2)
 	})
 }
 
-func BenchmarkBlurZero5(b *testing.B){
+func BenchmarkBlurZero5(b *testing.B) {
 	dobench(b, func(operation *vipser.Operation) {
 		operation.Blur(0.5)
 	})
 }
-
