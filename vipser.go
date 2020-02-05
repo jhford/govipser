@@ -53,12 +53,17 @@ type Operation struct {
 	Input io.Reader
 	Output io.Writer
 	Vipser string
+	finished bool
 }
 
 func New() *Operation {
+	vipser, err := FindVipser()
+	if err != nil {
+		panic(err)
+	}
 	return &Operation{
 		Commands: make([]Command, 0),
-		Vipser: Vipser,
+		Vipser: vipser,
 	}
 }
 
@@ -82,6 +87,10 @@ func (o Operation) RenderCommands() []string {
 
 func (o Operation) RunWithContext(ctx context.Context) error {
 	cmd := exec.CommandContext(ctx, o.Vipser, o.RenderCommands()...)
+	if o.Input == nil {
+		return errors.New("must provide input")
+	}
+
 	cmd.Stdin = o.Input
 	cmd.Stdout = o.Output
 

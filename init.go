@@ -2,41 +2,36 @@ package vipser
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 )
 
-var Vipser string
+// Just to compile in if needed
+const Vipser string = ""
 
-func verifyFile(p string) {
+func verifyFile(p string) error {
 	if fi, err := os.Stat(p); err != nil {
-		panic(fmt.Errorf("%s is not a valid executable", p))
+		return fmt.Errorf("%s is not a valid executable", p)
 	} else if fi.IsDir() {
-		panic(fmt.Errorf("%s is a directory", p))
+		return fmt.Errorf("%s is a directory", p)
 	} else if fi.Mode() & os.FileMode(0111) == 0 {
-		panic(fmt.Errorf("%s does not have exec permissions", p))
+		return fmt.Errorf("%s does not have exec permissions", p)
 	}
+	return nil
 }
 
 // VipserInit finds the vipser binary and stores it
-func VipserInit() {
+func FindVipser() (string, error) {
 	if Vipser != "" {
-		verifyFile(Vipser)
+		return Vipser, verifyFile(Vipser)
 	} else if v, ok := os.LookupEnv("VIPSER"); ok {
-		verifyFile(v)
-		Vipser = v
+		return v, verifyFile(v)
 	} else {
-		if prog, err := exec.LookPath("vipser"); err != nil {
-			panic(err)
-		} else if prog == "" {
-			verifyFile("vipser")
-			Vipser = "vipser"
+		if prog, _ := exec.LookPath("vipser"); prog == "" {
+			return "vipser", verifyFile("vipser")
 		} else {
-			verifyFile(prog)
-			Vipser = prog
+			return prog, verifyFile(prog)
 		}
 	}
-	log.Printf("using vipser %s", Vipser)
 }
 

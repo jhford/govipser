@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"github.com/jhford/govipser"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"log"
+	"os"
 	"testing"
 )
 
@@ -82,3 +85,31 @@ func TestOperation_RunCorrectInput(t *testing.T) {
 	assert.Equal(t, []byte("Hello!"), output.Bytes())
 }
 
+func TestOperation_ResizeImage(t *testing.T) {
+	//var output bytes.Buffer
+	op := vipser.New()
+	op.Resize(100, 200)
+
+	var output bytes.Buffer
+
+	i, err := os.Open("test.png")
+	assert.NoError(t, err)
+	defer func () {
+		err := i.Close()
+		assert.NoError(t, err)
+	}()
+
+	op.Input = i
+	op.Output = &output
+
+	t.Logf("Vipser: %s", op.Vipser)
+
+	err = op.Run()
+
+	err = ioutil.WriteFile(".test_" + t.Name(), output.Bytes(), 0644)
+	assert.NoError(t, err)
+
+	log.Printf("ACTUAL: %v", output.Bytes())
+	assert.Greater(t, output.Len(), 0)
+
+}
