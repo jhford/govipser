@@ -85,31 +85,120 @@ func TestOperation_RunCorrectInput(t *testing.T) {
 	assert.Equal(t, []byte("Hello!"), output.Bytes())
 }
 
-func TestOperation_ResizeImage(t *testing.T) {
+var testfile string = "test.png"
+var testinput []byte
+
+func init() {
+	if v, ok := os.LookupEnv("TEST_IMAGE"); ok {
+		log.Printf("Setting test image path to %s", v)
+		testfile = v
+	}
+
+	i, err := ioutil.ReadFile(testfile)
+	if err != nil {
+		panic(err)
+	}
+	testinput = i
+}
+
+func TestOperation_ResizeImage_Readers(t *testing.T) {
 	//var output bytes.Buffer
 	op := vipser.New()
-	op.Resize(100, 200)
+	op.Resize(2, 2)
 
 	var output bytes.Buffer
 
-	i, err := os.Open("test.png")
-	assert.NoError(t, err)
-	defer func () {
-		err := i.Close()
-		assert.NoError(t, err)
-	}()
+	op.Input = bytes.NewBuffer(testinput)
 
-	op.Input = i
 	op.Output = &output
 
 	t.Logf("Vipser: %s", op.Vipser)
 
-	err = op.Run()
-
-	err = ioutil.WriteFile(".test_" + t.Name(), output.Bytes(), 0644)
+	err := op.Run()
 	assert.NoError(t, err)
-
-	log.Printf("ACTUAL: %v", output.Bytes())
 	assert.Greater(t, output.Len(), 0)
 
 }
+
+func TestOperation_ResizeImage_Buffers(t *testing.T) {
+	op := vipser.New()
+	op.Resize(2, 2)
+
+	output, err := op.Apply(testinput)
+	assert.NoError(t, err)
+	assert.Greater(t, len(output), 0)
+}
+
+func TestOperation_ResizeImage_Files(t *testing.T) {
+	op := vipser.New()
+
+	op.Autorot()
+	op.Resize(512, 384)
+	op.EmbedWhite(512/2, 384/2, 1024, 768)
+	op.Format("png")
+	op.Extract(90, 90, 1024-180, 768-180)
+	op.Blur(3)
+	op.Rotate(90)
+
+
+	in, err := os.Open(testfile)
+	assert.NoError(t, err)
+	op.Input = in
+
+	outname := ".test_" + t.Name() + ".png"
+	out, err := os.Create(outname)
+	assert.NoError(t, err)
+	op.Output = out
+
+	err = op.Run()
+	assert.NoError(t, err)
+
+	fi, err := os.Stat(outname)
+	assert.NoError(t, err)
+	if err == nil {
+		assert.Greater(t, fi.Size(), int64(0))
+	}
+}
+
+func dobench(b *testing.B, mods func(*vipser.Operation)) {
+	var out []byte
+	for i := 0; i < b.N; i++ {
+		op := vipser.New()
+
+		mods(op)
+
+		_out, err := op.Apply(testinput)
+		if err != nil {
+			panic(err)
+		}
+
+		out = _out
+	}
+
+	b.ReportMetric(float64(len(out)), "bytes_out")
+	b.ReportMetric(float64(len(testinput)), "bytes_in")
+	b.ReportMetric(float64(len(testinput) - len(out)), "bytes_red")
+}
+
+func BenchmarkNoCommands(b *testing.B){
+	dobench(b, func(operation *vipser.Operation) {})
+}
+
+func BenchmarkResize(b *testing.B){
+	dobench(b, func(operation *vipser.Operation) {
+		operation.Resize(200,200)
+	})
+}
+
+func BenchmarkBlur2(b *testing.B){
+	dobench(b, func(operation *vipser.Operation) {
+		operation.Blur(2)
+	})
+}
+
+func BenchmarkBlurZero5(b *testing.B){
+	dobench(b, func(operation *vipser.Operation) {
+		operation.Blur(0.5)
+	})
+}
+

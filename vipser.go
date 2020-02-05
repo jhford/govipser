@@ -1,6 +1,7 @@
 package vipser
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -77,6 +78,70 @@ func (o *Operation) Stretch(x,y int) *Operation {
 	return o
 }
 
+func (o *Operation) Expand(x,y int) *Operation {
+	o.Commands = append(o.Commands, Command{"EXPAND", x, y})
+	return o
+}
+
+func (o *Operation) Extract(left, top, width, height int) *Operation {
+	o.Commands = append(o.Commands, Command{"EXTRACT", left, top, width, height})
+	return o
+}
+
+type VipserEmbed int
+
+const (
+	VipserEmbedWhite = VipserEmbed(1)
+	VipserEmbedBlack = VipserEmbed(2)
+)
+
+func (o *Operation) Embed(x, y, width, height int, embed VipserEmbed) *Operation {
+	var command string
+	if embed == VipserEmbedBlack {
+		command = "EMBBLK"
+	} else if embed == VipserEmbedWhite {
+		command = "EMBWHT"
+	} else {
+		panic("you found a programming error!")
+	}
+
+	o.Commands = append(o.Commands, Command{command, x, y, width, height})
+	return o
+}
+
+func (o *Operation) EmbedWhite(x, y, width, height int) *Operation {
+	return o.Embed(x,y,width,height, VipserEmbedWhite)
+}
+
+func (o *Operation) EmbedBlack(x, y, width, height int) *Operation {
+	return o.Embed(x,y,width,height, VipserEmbedBlack)
+}
+
+func (o *Operation) Blur(sigma float64) *Operation {
+	o.Commands = append(o.Commands, Command{"BLUR", sigma})
+	return o
+}
+
+func (o *Operation) Rotate(angle int) *Operation {
+	o.Commands = append(o.Commands, Command{"ROTATE", angle})
+	return o
+}
+
+func (o *Operation) Autorot() *Operation {
+	o.Commands = append(o.Commands, Command{"AUTOROT"})
+	return o
+}
+
+func (o *Operation) Quality(quality int) *Operation {
+	o.Commands = append(o.Commands, Command{"QUALITY", quality})
+	return o
+}
+
+func (o *Operation) Format(format string) *Operation {
+	o.Commands = append(o.Commands, Command{"EXPORT", format})
+	return o
+}
+
 func (o Operation) RenderCommands() []string {
 	commands := make([]string, len(o.Commands))
 	for i, command := range o.Commands {
@@ -91,8 +156,14 @@ func (o Operation) RunWithContext(ctx context.Context) error {
 		return errors.New("must provide input")
 	}
 
+	if o.Output == nil {
+		return errors.New("must provide output")
+	}
+
+	var stderr bytes.Buffer
 	cmd.Stdin = o.Input
 	cmd.Stdout = o.Output
+	cmd.Stderr = &stderr
 
 	err := cmd.Start()
 	if err != nil {
@@ -102,7 +173,7 @@ func (o Operation) RunWithContext(ctx context.Context) error {
 	err = cmd.Wait()
 
 	if v, ok := err.(*exec.ExitError); ok {
-		return fmt.Errorf("%s exited %d\n=======\n%s", cmd, v.ExitCode(), v.Stderr)
+		return fmt.Errorf("%s exited %d\n=======\n%s", cmd, v.ExitCode(), stderr.Bytes())
 	}
 
 	return nil
@@ -110,5 +181,18 @@ func (o Operation) RunWithContext(ctx context.Context) error {
 
 func (o Operation) Run() error {
 	return o.RunWithContext(context.Background())
+}
+
+func (o *Operation) Apply(input []byte) ([]byte, error) {
+	var output bytes.Buffer
+	o.Output = &output
+	o.Input = bytes.NewBuffer(input)
+
+	err := o.Run()
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return output.Bytes(), nil
 }
 

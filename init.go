@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 // Just to compile in if needed
@@ -28,7 +29,11 @@ func FindVipser() (string, error) {
 		return v, verifyFile(v)
 	} else {
 		if prog, _ := exec.LookPath("vipser"); prog == "" {
-			return "vipser", verifyFile("vipser")
+			vipser, err := filepath.Abs("vipser")
+			if err != nil {
+				return "", err
+			}
+			return vipser, verifyFile(vipser)
 		} else {
 			return prog, verifyFile(prog)
 		}
