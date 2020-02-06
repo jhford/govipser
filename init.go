@@ -30,7 +30,7 @@ func verifyFile(p string) error {
 func MakeVipserBin() (string, error) {
 	switch runtime.GOARCH {
 	case "amd64":
-		return "vipser-amd64", ioutil.WriteFile("vipser-amd64", vipser64, 0755)
+		return "vipser-linux-amd64", ioutil.WriteFile("vipser-linux-amd64", vipser64, 0755)
 	default:
 		return "", fmt.Errorf("cannot create vipser binary for %s", runtime.GOARCH)
 	}
